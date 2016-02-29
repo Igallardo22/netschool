@@ -1,0 +1,12 @@
+name = MOOC Helper Book Navigation tweaks
+description = Book navigation for tweaks.
+core = 7.x
+package = MOOC
+dependencies[] = book_cache
+dependencies[] = book
+; Information added by Drupal.org packaging script on 2015-09-21
+version = "7.x-1.0-rc1"
+core = "7.x"
+project = "mooc"
+datestamp = "1442853464"
+

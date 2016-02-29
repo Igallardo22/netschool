@@ -1,0 +1,14 @@
+name = CIS Service Connection
+description = Provides a data bridge between CIS service distros and a CIS data source
+core = 7.x
+package = ELMSLN Core
+files[] = cis_service_connection.module
+files[] = cis_service_connection.install
+dependencies[] = cis_connector
+
+; Information added by Drupal.org packaging script on 2015-09-21
+version = "7.x-1.0-beta1+90-dev"
+core = "7.x"
+project = "cis_connector"
+datestamp = "1442849241"
+

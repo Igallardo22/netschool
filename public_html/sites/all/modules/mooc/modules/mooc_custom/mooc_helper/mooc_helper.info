@@ -1,0 +1,20 @@
+name = MOOC Helper
+description = Helper functions and glue code for the MOOC code base
+core = 7.x
+package = MOOC
+dependencies[] = ctools
+dependencies[] = features
+dependencies[] = cis_service_connection
+dependencies[] = book
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[user_role][] = activation code holder
+features[variable][] = scanner_body_field_revision_body_page
+features[variable][] = scanner_title_node_revision_page
+
+; Information added by Drupal.org packaging script on 2015-09-21
+version = "7.x-1.0-rc1"
+core = "7.x"
+project = "mooc"
+datestamp = "1442853464"
+

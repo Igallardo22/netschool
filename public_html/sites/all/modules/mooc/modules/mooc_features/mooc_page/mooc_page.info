@@ -1,0 +1,33 @@
+name = MOOC Page
+description = Page content type for the MOOC platform with field defaults
+core = 7.x
+package = MOOC
+dependencies[] = ctools
+dependencies[] = ds
+dependencies[] = features
+dependencies[] = field_group
+dependencies[] = mooc_ux_defaults
+dependencies[] = strongarm
+dependencies[] = text
+features[ctools][] = ds:ds:1
+features[ctools][] = field_group:field_group:1
+features[ctools][] = strongarm:strongarm:1
+features[ds_layout_settings][] = node|page|form
+features[features_api][] = api:2
+features[field_base][] = body
+features[field_base][] = field_cis_tag
+features[field_group][] = group_cis_tag_group|node|page|form
+features[field_instance][] = node-page-body
+features[field_instance][] = node-page-field_cis_tag
+features[node][] = page
+features[variable][] = field_bundle_settings_node__page
+features[variable][] = menu_options_page
+features[variable][] = menu_parent_page
+features_exclude[dependencies][mooc_content_theming] = mooc_content_theming
+
+; Information added by Drupal.org packaging script on 2015-09-21
+version = "7.x-1.0-rc1"
+core = "7.x"
+project = "mooc"
+datestamp = "1442853464"
+

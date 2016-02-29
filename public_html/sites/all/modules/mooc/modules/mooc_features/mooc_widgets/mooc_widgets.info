@@ -1,0 +1,22 @@
+name = MOOC widgets
+description = Required base package to allow for MOOC widgets to be used
+core = 7.x
+package = MOOC Widgets
+dependencies[] = content_type_groups
+dependencies[] = ctools
+dependencies[] = entity_view_mode
+dependencies[] = exclude_node_title
+dependencies[] = strongarm
+dependencies[] = views
+features[ctools][] = strongarm:strongarm:1
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[variable][] = entity_view_modes
+features[views_view][] = mooc_widgets
+
+; Information added by Drupal.org packaging script on 2015-09-21
+version = "7.x-1.0-rc1"
+core = "7.x"
+project = "mooc"
+datestamp = "1442853464"
+

@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * Implements hook_install().
+ *
+ * Perform actions to set up the site for this profile.
+ */
+function mooc_install() {
+  // load the installer inlcude file
+  module_load_include('inc', 'cis_connector', 'includes/elmsln.install');
+  // do some initial clean up from the install
+  _elmsln_installer_preflight();
+  // to standard theme routine
+  _elmsln_installer_theme('mooc_foundation_access');
+  // establish admin role
+  _elmsln_installer_admin_role();
+  // standard clean up
+  _elmsln_installer_post_install_cleanup();
+
+  // Allow visitor account creation with administrative approval.
+  variable_set('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL);
+  // drop the "book" content type as its confusing
+  node_type_delete('book');
+  // create basic content to drive system
+  if (!drupal_is_cli()) {
+    $root = _mooc_default_content('page');
+    _mooc_default_content('page', $root->nid);
+    _mooc_default_content('section', $root->nid);
+  }
+  else {
+    // if this is created via drush we don't need default contnet
+    // this provides usability to those testing it out
+    // without interfering with more complex setups
+    // we also make the assumption that node 2 will be
+    // the outline in question as this method will be called
+    // with a content outline import automatically after
+    // the distro finishes building
+    _mooc_default_content('section', 2);
+  }
+}
+
+/**
+ * Callback to generate a node during install.
+ */
+function _mooc_default_content($type, $bid = NULL) {
+  $node = new stdClass();
+  $node->type = $type;
+  node_object_prepare($node);
+  $node->language = LANGUAGE_NONE;
+  $node->uid = 1;
+  $node->status = 1;
+  $node->promote = 0;
+  $node->revision = 1;
+  switch ($type) {
+    case 'page':
+      $node->title = empty($bid) ? t('Master Outline') : t('Lesson 1');
+      $node->book['bid'] = empty($bid) ? 'new' : $bid;
+    break;
+    case 'section':
+      $node->title = t('Master Section');
+      // make up a random section id to make things happy but fake
+      $node->field_section_id[LANGUAGE_NONE][0]['value'] = 'master_' . rand(1000, 5000);
+      // mark this as inactive so it can sync with systems
+      $node->field_cis_active[LANGUAGE_NONE][0]['value'] = 0;
+      $node->field_instructional_outlines[LANGUAGE_NONE][0]['target_id'] = $bid;
+    break;
+  }
+  // build out via submit then save
+  if($node = node_submit($node)) {
+    node_save($node);
+  }
+  return $node;
+}

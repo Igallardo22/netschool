@@ -1,0 +1,24 @@
+<?php
+/**
+ * @file
+ * Provide uncached requests with developer messages for debugging
+ */
+
+/**
+ * Implements hook_cis_prerequest_alter().
+ */
+function cis_devel_cis_prerequest_alter(&$request) {
+  if (user_access('access devel information')) {
+    $request['cached'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_cis_postrequest_alter().
+ */
+function cis_devel_cis_postrequest_alter(&$request) {
+  if (user_access('access devel information')) {
+    // @ignore production_code
+    dpm($request);
+  }
+}

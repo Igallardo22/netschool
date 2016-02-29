@@ -1,0 +1,288 @@
+<?php
+/**
+ * @file
+ * Code for CIS LMSless to place branding on page and create experience.
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function cis_lmsless_permission() {
+  return array(
+    'view lmsless bar' =>  array(
+      'title' => t('View LMSless bar'),
+      'description' => t('Provides context as to what system you are in and quick links.'),
+    ),
+    'view lmsless cis link' =>  array(
+      'title' => t('View link to CIS space'),
+      'description' => t('This shows the shortcut to the marketing space in CIS.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function cis_lmsless_page_build(&$page) {
+  // make sure they have access to view this
+  if (user_access('view lmsless bar') && !path_is_admin(current_path())) {
+    $page['page_top']['cis_lmsless'] = array(
+      '#weight' => -10,
+      '#markup' => _cis_lmsless_assemble(),
+    );
+  }
+}
+
+/**
+ * Callback to assemble the bar
+ */
+function _cis_lmsless_assemble() {
+  // assemble variables for theming
+  $vars = _cis_lmsless_theme_vars();
+  drupal_add_css(drupal_get_path('module', 'cis_lmsless') . '/css/cis_lmsless.css');
+  return theme('cis_lmsless_bar', $vars);
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function cis_lmsless_form_masquerade_block_1_alter(&$form, &$form_state, $form_id) {
+  $section = _cis_connector_section_context();
+  // don't do these for the master section or it makes no sense
+  if (strpos($section, 'master_') !== 0) {
+    $form['masquerade_user_field']['#chosen'] = TRUE;
+    $form['masquerade_user_field']['#type'] = 'select';
+    $field_conditions = array();
+    // don't assume there is a section context when masquerade is enabled
+    if (module_exists('cis_section') && $gid = _cis_section_load_section_by_id($section)) {
+      $field_conditions = array('og_user_node' => array('target_id', array($gid), 'IN'));
+    }
+    // pull together the users
+    $users = _cis_connector_assemble_entity_list('user', 'user', 'name', 'name', $field_conditions);
+    $form['masquerade_user_field']['#options'] = $users;
+    unset($form['masquerade_user_field']['#size']);
+    unset($form['masquerade_user_field']['#autocomplete_path']);
+  }
+}
+
+/**
+ * Callback to return common theme variables when styling CIS theme components
+ * @return array array of variables to pass to the theme
+ */
+function _cis_lmsless_theme_vars() {
+  // @todo cache this as it's around 250k memory transaction
+  // ensure this doesn't load when it doesn't have to
+  $vars = &drupal_static(__FUNCTION__);
+  if (!isset($vars)) {
+    $vars = array(
+      'front_page' => variable_get('site_frontpage','node'),
+      'site_name' => variable_get('site_name', t('Service')),
+      'slogan' => variable_get('site_slogan', ''),
+    );
+    // build in section context if we have one we can pull
+    if ($section = _cis_connector_section_context()) {
+      $vars['section'] = $section;
+    }
+    // pull in the instructor contact info block
+    $vars['contact_block'] = cis_service_connection_block_instructor_contact();
+    // pull list of resources as an array
+    $query = array('field_access_string' => $section, 'archived' => 0);
+    // request the section of the user
+    $cis_section_item = _cis_connection_query($query, 'field_collection_item');
+    // make sure it got data
+    $resources = array();
+    if (!empty($cis_section_item) && !empty($cis_section_item['list'])) {
+      $list = '';
+      if (isset($cis_section_item['list'][0]['field_resources'])) {
+        foreach ($cis_section_item['list'][0]['field_resources'] as $reid) {
+          $resource = _cis_connection_object($reid['id'], $reid['resource']);
+          $resources[$resource['field_machine_name']] = array(
+            'title' => check_plain($resource['title']),
+            'body' => check_markup($resource['body']['value'], $resource['body']['format'])
+          );
+          // check for tech support resource
+          if (strpos($resource['field_machine_name'], 'tech_support') === 0 || strpos($resource['field_machine_name'], 'techsupport') === 0) {
+            $vars['tech_support'] = $resources[$resource['field_machine_name']];
+          }
+        }
+      }
+    }
+    $vars['resources'] = $resources;
+    // throw in username
+    $vars['username'] = (isset($GLOBALS['user']->name) ? check_plain($GLOBALS['user']->name) : '');
+    // set a login link if we don't have a user name
+    if ($vars['username'] == '') {
+      $vars['userlink'] = l(t('login'), 'user', array('attributes' => array('class' => array('account-logout', 'text-center', 'row'))));
+    }
+    else {
+      $vars['userlink'] = l(t('log out'), 'user/logout', array('attributes' => array('class' => array('account-logout', 'text-center', 'row'))));
+    }
+    if (_cis_connector_role_groupings(array('staff','teacher')) || isset($_SESSION['masquerading'])) {
+      $vars['admin_status_bar'] = array();
+      if (_cis_connector_role_groupings(array('staff','teacher'))) {
+        $vars['admin_status_bar']['course-settings'] = array(
+          'modal' => 'block-menu-menu-course-tools-menu-nav-modal',
+          'title' => t('settings'),
+          'content' => str_replace('/', '', base_path()),
+        );
+      }
+      // account for systems without sections (like authorities)
+      if ($section && user_access('switch section context')) {
+        $vars['admin_status_bar']['course-section'] = array(
+          'modal' => 'block-cis-service-connection-section-context-changer-nav-modal',
+          'title' => t('change'),
+          'content' => $section,
+        );
+      }
+      // render differently if the user is already masquerading
+      if (isset($_SESSION['masquerading'])) {
+        $vars['admin_status_bar']['current-user-id'] = array(
+          'title' => l(t('revert'), 'masquerade/unswitch', array('query' => array('token' => drupal_get_token('masquerade/unswitch')))),
+          'content' => filter_xss($GLOBALS['user']->name),
+        );
+      }
+      else {
+        $vars['admin_status_bar']['current-user-id'] = array(
+          'modal' => 'block-masquerade-masquerade-nav-modal',
+          'title' => t('impersonate'),
+          'content' => filter_xss($GLOBALS['user']->name),
+        );
+      }
+      // calculate roles
+      $tmproles = $GLOBALS['user']->roles;
+      unset($tmproles[1]);
+      unset($tmproles[2]);
+      // figure out how to present roles, don't assume there are roles
+      if (!empty($tmproles)) {
+        sort($tmproles);
+        $vars['admin_status_bar']['user-role'] = array(
+          'content' => filter_xss(implode(', ', $tmproles)),
+        );
+      }
+    }
+    $distro = variable_get('install_profile', 'standard');
+    $reg = _cis_connector_build_registry();
+    $tmp = explode('.', $reg[$distro]['address']);
+    $machine_name = $tmp[0];
+    // account for the current service being worked on but not actually
+    // being actively used in the section in question
+    $current_url = $GLOBALS['base_url'] . '/';
+    $course_context = _cis_connector_course_context();
+    if (_cis_connector_system_type() == 'authority') {
+      $current_url .= $course_context;
+    }
+    $vars['active'] = array(
+      'title' => (isset($reg[$distro]['default_title']) ? $reg[$distro]['default_title'] : ''),
+      'url' => $current_url,
+      'machine_name' => $machine_name,
+    );
+    // services label specific to course context
+    $service_group = t('Network');
+    // request a list of all other services that this section uses
+    if ($services = _cis_connector_transaction('other_services')) {
+      foreach ($services as $service) {
+        // ensure we don't get two of these to display
+        $list[$service_group][$service['field_machine_name']] = array(
+          'title' => $service['title'],
+          'url' => $service['field_location']['url'] . '/' . $course_context,
+          'machine_name' => $service['field_machine_name'],
+        );
+      }
+    }
+    // ensure that there's at least the current if no services selected
+    if (!isset($list)) {
+      $list[$service_group][$machine_name] = $vars['active'];
+    }
+    // allow theme to override this if set
+    $theme_override = theme_get_setting('foundation_access_system_label');
+    if (!empty($theme_override)) {
+      $vars['active']['title'] = $theme_override;
+    }
+    // add in links to the Authority systems if permission exists
+    // @ignore druplart_conditional_assignment
+    $administrative = t('Administrative');
+    if (user_access('view lmsless cis link') && is_array($reg)) {
+      foreach ($reg as $key => $value) {
+        $addr = explode('.', $value['address']);
+        if (isset($value['instance']) && !$value['instance'] && $addr[0] != $vars['active']['machine_name']) {
+          $list[$administrative][$addr[0]] = array(
+            'title' => $reg[$key]['default_title'],
+            'url' => _cis_connector_format_address($reg[$key],  '/' . $course_context, 'front'),
+            'machine_name' => $addr[0],
+          );
+        }
+      }
+
+      // service creation stuff inline
+      if (!empty($course_context)) {
+        $vars['service_option_link'] = _cis_connector_format_address($reg['cis'],  '/' . $course_context, 'front') . '/service-instances';
+      }
+    }
+    // special exception for inbox as it's not an administrative system but is authority
+    if (isset($reg['inbox'])) {
+      unset($list[$administrative]['inbox']);
+      $addr = explode('.', $reg['inbox']['address']);
+      $list[$service_group][$addr[0]] = array(
+        'title' => $reg['inbox']['default_title'],
+        'url' => _cis_connector_format_address($reg['inbox'],  '/' . $course_context, 'front'),
+        'machine_name' => $addr[0],
+      );
+    }
+    $vars['services'] = $list;
+    $vars['bar_elements'] = array(
+      'network' => TRUE,
+      'user' => TRUE,
+      'help' => TRUE,
+      'syllabus' => TRUE
+    );
+    // if authority, remove the syllabus
+    if (_cis_connector_system_type() == 'authority') {
+      $vars['bar_elements']['syllabus'] = FALSE;
+    }
+    // support people wiping help link via settings
+    $help_link = variable_get('cis_help_page', 'course-help');
+    if (empty($help_link)) {
+      $vars['bar_elements']['help'] = FALSE;
+    }
+    $vars['help_link'] = url($help_link);
+    // support people wiping syllabus link via settings
+    $syllabus_link = variable_get('cis_syllabus_page', 'syllabus');
+    if (empty($syllabus_link)) {
+      $vars['bar_elements']['syllabus'] = FALSE;
+    }
+    $vars['syllabus_link'] = url($syllabus_link);
+
+    // allow other projects to alter these values
+    drupal_alter('cis_lmsless_theme_vars', $vars);
+  }
+  return $vars;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function cis_lmsless_theme() {
+  return array(
+    'cis_lmsless_bar' => array(
+      'variables' => array(
+        'front_page' => 'node',
+        'site_name' => t('Service'),
+        'section' => t('Master Section'),
+        'active' => array('title' => ''),
+        'services' => array(),
+        'tour' => url('guided_tour'),
+        'main_menu' => menu_tree(variable_get('menu_main_links_source', 'main-menu')),
+        'help_link' => url('course-help'),
+        'syllabus_link' => url('syllabus'),
+        'username' => t('Account'),
+        'userlink' => '',
+        'resources' => array(),
+        'tech_support' => array(),
+        'admin_status_bar' => array(),
+        'bar_elements' => array('network' => TRUE, 'user' => TRUE, 'help' => TRUE, 'syllabus' => TRUE),
+      ),
+      'render element' => 'element',
+      'template' => 'templates/cis-lmsless-bar',
+    ),
+  );
+}

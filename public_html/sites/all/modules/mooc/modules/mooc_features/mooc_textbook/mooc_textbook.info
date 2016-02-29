@@ -1,0 +1,31 @@
+name = MOOC textbook
+description = Textbook overrides for MOOC text editor defaults
+core = 7.x
+package = MOOC
+project = mooc
+dependencies[] = cis_filter
+dependencies[] = ctools
+dependencies[] = features_override
+dependencies[] = footnotes
+dependencies[] = footnotes_wysiwyg
+dependencies[] = strongarm
+dependencies[] = token_insert_entity
+dependencies[] = token_insert_wysiwyg
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[features_overrides][] = filter.textbook_editor.filters|cis_filter
+features[features_overrides][] = filter.textbook_editor.filters|ckeditor_link_filter|weight
+features[features_overrides][] = filter.textbook_editor.filters|filter_footnotes
+features[features_overrides][] = filter.textbook_editor.filters|filter_tokens
+features[features_overrides][] = wysiwyg.textbook_editor.settings|buttons|drupal
+features[features_overrides][] = wysiwyg.textbook_editor.settings|buttons|footnotes
+features[variable][] = accessibility_content_show_toggle
+features[variable][] = accessibility_content_toggle_message_off
+features[variable][] = accessibility_content_toggle_message_on
+
+; Information added by Drupal.org packaging script on 2015-09-21
+version = "7.x-1.0-rc1"
+core = "7.x"
+project = "mooc"
+datestamp = "1442853464"
+

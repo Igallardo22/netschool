@@ -1,0 +1,22 @@
+name = CIS Roles
+description = Standard roles for use within ELMSLN
+core = 7.x
+package = ELMSLN Core
+dependencies[] = features
+dependencies[] = role_export
+features[features_api][] = api:2
+features[user_role][] = SERVICE ACCOUNT
+features[user_role][] = administrator
+features[user_role][] = guest
+features[user_role][] = instructor
+features[user_role][] = past student
+features[user_role][] = staff
+features[user_role][] = student
+features[user_role][] = teaching assistant
+
+; Information added by Drupal.org packaging script on 2015-09-21
+version = "7.x-1.0-beta1+90-dev"
+core = "7.x"
+project = "cis_connector"
+datestamp = "1442849241"
+

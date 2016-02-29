@@ -1,0 +1,51 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Admin Menu Hider, to keep the admin menu out of the way.
+ *
+ * Admin Menu Hider will hide/show the admin menu with the press of a key.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function admin_menu_dropdown_init() {
+  if (!user_access('access administration menu') || admin_menu_suppress(FALSE)) {
+    return;
+  }
+  $settings = array(
+    'key'    => variable_get('admin_menu_dropdown_key', '`'),
+    'onload' => variable_get('admin_menu_dropdown_default', 1),
+  );
+  drupal_add_js(array('admin_menu_dropdown' => $settings), array('type' => 'setting'));
+  $path = drupal_get_path('module', 'admin_menu_dropdown');
+  drupal_add_js($path . '/admin_menu_dropdown.js', array('every_page' => TRUE, 'defer' => TRUE));
+  drupal_add_css($path . '/admin_menu_dropdown.css', array('every_page' => TRUE));
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for admin_menu_theme_settings().
+ */
+function admin_menu_dropdown_form_admin_menu_theme_settings_alter(&$form, &$form_state) {
+  $form['tweaks']['admin_menu_dropdown'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Admin Menu Hider Settings'),
+    '#description' => t("To be most useful, turn on 'Keep Menu at top of Page' above. (Note that this does not work in some browsers!)"),
+  );
+  $form['tweaks']['admin_menu_dropdown']['admin_menu_dropdown_default'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Hide by default'),
+    '#default_value' => variable_get('admin_menu_dropdown_default', 1),
+    '#description' => t('Hide the admin menu by default.'),
+  );
+  $form['tweaks']['admin_menu_dropdown']['admin_menu_dropdown_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Show/hide key'),
+    '#size' => 1,
+    '#maxlength' => 1,
+    '#default_value' => variable_get('admin_menu_dropdown_key', '`'),
+    '#description' => t('This key will show/hide the admin menu.'),
+    '#wysiwyg' => FALSE,
+  );
+}

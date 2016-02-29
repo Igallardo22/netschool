@@ -1,0 +1,35 @@
+// Color variables used in settings and other partials
+@import "main-styles/colorscheme";
+
+// Settings overrides need to be imported before foundation components
+@import "main-styles/settings";
+
+// Import foundation components
+@import "foundation";
+
+// Customizations
+@import "main-styles/mixins";
+@import "main-styles/fonts";
+@import "main-styles/magellan";
+@import "main-styles/admin_menu";
+@import "main-styles/admin-status-bar";
+@import "main-styles/main-navigation-topbar";
+@import "main-styles/modal";
+@import "main-styles/icons";
+@import "main-styles/progress-bar";
+@import "main-styles/breadcrumbs";
+@import "main-styles/off-canvas-left-menu";
+@import "main-styles/service-toolbar";
+@import "main-styles/menu-drops";
+@import "main-styles/footer";
+@import "main-styles/common";
+@import "main-styles/logo";
+
+// Content/Responsive Typography Styling
+@import "main-styles/content-styles/content";
+@import "main-styles/content-styles/intro";
+@import "main-styles/content-styles/pullquote";
+@import "main-styles/content-styles/print";
+
+// elmsmedia
+@import "subtheme-elmsmedia/service-toolbar";

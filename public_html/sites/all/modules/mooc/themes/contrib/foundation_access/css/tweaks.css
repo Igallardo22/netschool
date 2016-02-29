@@ -1,0 +1,51 @@
+.view-foundation-access-header {
+  width: 100%;
+}
+
+.region-header {
+  background-position: center;
+  background-size: 100rem;
+  z-index: 1;
+  width: 100%;
+  background-attachment: fixed;
+}
+.region-header img {
+  width: 100%;
+  background-attachment: fixed;
+}
+
+h1#page-title {
+  font-size: 2.75rem;
+  line-height: 2.75rem;
+  padding: 0rem 0 2rem;
+}
+
+.etb-book h2 {
+  font-size: 2.25rem;
+  font-weight: bold;
+}
+
+.etb-book h3 {
+  font-size: 1.75rem;
+  font-weight: bold;
+}
+
+.etb-book h4 {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+/* inline flex support in browsers that don't support it currently */
+.toolbar-menu-icon,
+.content-outline-navigation h2,
+.content-outline-navigation h3,
+ul.off-canvas-list .left-submenu li.back {
+  display: -webkit-inline-flex;
+  display: -ms-inline-flexbox;
+  display: inline-flex;
+}
+
+/* Removed the outline focus on the dropdown element */
+.f-dropdown.content:focus {
+  outline-style: none;
+}

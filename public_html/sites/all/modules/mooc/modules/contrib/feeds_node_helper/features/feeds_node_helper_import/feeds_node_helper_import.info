@@ -1,0 +1,23 @@
+name = Book outline import
+description = Import Book outlines from other Drupal sites
+core = 7.x
+package = Feeds
+project = feeds_node_helper_import
+dependencies[] = ctools
+dependencies[] = feeds
+dependencies[] = feeds_node_helper
+dependencies[] = feeds_tamper
+dependencies[] = feeds_xpathparser
+features[ctools][] = feeds:feeds_importer_default:1
+features[ctools][] = feeds_tamper:feeds_tamper_default:2
+features[features_api][] = api:2
+features[feeds_importer][] = feeds_node_helper_book_import
+features[feeds_tamper][] = feeds_node_helper_book_import-xpathparser_3-current_user_id
+mtime = 1421039306
+
+; Information added by Drupal.org packaging script on 2015-01-12
+version = "7.x-1.5+1-dev"
+core = "7.x"
+project = "feeds_node_helper"
+datestamp = "1421075253"
+

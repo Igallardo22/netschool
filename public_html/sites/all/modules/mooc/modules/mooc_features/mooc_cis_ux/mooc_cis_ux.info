@@ -1,0 +1,43 @@
+name = MOOC CIS UX
+description = User experience elements specific to running a CIS instance
+core = 7.x
+package = MOOC
+dependencies[] = cis_section
+dependencies[] = cis_service_connection
+dependencies[] = cis_service_connection_ux
+dependencies[] = ctools
+dependencies[] = entityreference
+dependencies[] = features
+dependencies[] = feeds_node_helper_export
+dependencies[] = joyride
+dependencies[] = menu
+dependencies[] = menu_attributes
+dependencies[] = menu_token
+dependencies[] = mooc_helper
+dependencies[] = options
+dependencies[] = special_menu_items
+dependencies[] = views
+features[context][] = mooc_cis_student_ux-blocks
+features[context][] = mooc_cis_ux-blocks
+features[context][] = mooc_cis_ux-guidedtour
+features[ctools][] = context:context:3
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[field_base][] = field_instructional_outlines
+features[field_instance][] = node-section-field_instructional_outlines
+features[menu_links][] = menu-course-tools-menu_content-tool:<nolink>
+features[menu_links][] = menu-course-tools-menu_import-content-outline:import/feeds_node_helper_book_import
+features[views_view][] = mooc_book_roots
+features_exclude[menu_custom][menu-cis-toolkit] = menu-cis-toolkit
+features_exclude[menu_custom][menu-course-tools-menu] = menu-course-tools-menu
+features_exclude[dependencies][mooc_cis_ux] = mooc_cis_ux
+features_exclude[features_overrides][field.node-section-field_instructional_outlines.field_config|settings|cis_connector_access] = field.node-section-field_instructional_outlines.field_config|settings|cis_connector_access
+features_exclude[features_overrides][field.node-section-field_instructional_outlines.field_config|settings|cis_connector_disable] = field.node-section-field_instructional_outlines.field_config|settings|cis_connector_disable
+features_exclude[features_overrides][field.node-section-field_instructional_outlines.field_config|settings|profile2_private] = field.node-section-field_instructional_outlines.field_config|settings|profile2_private
+
+; Information added by Drupal.org packaging script on 2015-09-21
+version = "7.x-1.0-rc1"
+core = "7.x"
+project = "mooc"
+datestamp = "1442853464"
+

@@ -1,0 +1,42 @@
+<?php
+/**
+ * @file
+ * Code for the MOOC CIS UX feature.
+ */
+
+include_once 'mooc_cis_ux.features.inc';
+
+/**
+ * Implements hook_cis_section_deactivate().
+ */
+function mooc_cis_ux_cis_section_deactivate() {
+  return array('_mooc_cis_ux_archive_outline');
+}
+
+/**
+ * Callback to send outline on section deactivation.
+ */
+function _mooc_cis_ux_archive_outline($node) {
+  // make sure this had an outline set first
+  if (isset($node->field_instructional_outlines['und'])) {
+    // pull section object from cis
+    $section = _cis_connector_transaction('section', 'default', array(), $node->field_section_id['und'][0]['value']);
+    // grab local outline in use
+    $bid = $node->field_instructional_outlines['und'][0]['target_id'];
+    // build out the data array
+    $call = array(
+      'op' => 'set',
+      'field' => 'field_course_archive',
+      'bucket' => 'mooc',
+      'url' => 'feeds_node_helper_export/' . $bid,
+    );
+    // set a job
+    $data = array(
+      'field_cis_ops' => serialize($call),
+    );
+    // Save info if we got any
+    if (isset($section['item_id'])) {
+      _cis_connection_object($section['item_id'], 'field_collection_item', NULL, 'PUT', $data);
+    }
+  }
+}

@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the MOOC UX Defaults feature.
+ */
+
+include_once 'mooc_ux_defaults.features.inc';

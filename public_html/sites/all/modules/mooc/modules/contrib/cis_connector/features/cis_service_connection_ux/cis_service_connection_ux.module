@@ -1,0 +1,225 @@
+<?php
+/**
+ * @file
+ * Code for the CIS Service Connection UX feature.
+ */
+
+include_once 'cis_service_connection_ux.features.inc';
+
+/**
+ * Implements hook_menu().
+ */
+function cis_service_connection_ux_menu() {
+  $items = array();
+
+  $items['admin/config/system/course-settings'] = array(
+    'title' => 'Course settings',
+    'description' => 'Change system settings for your course.',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cis_service_connection_ux_form'),
+    'access callback' => '_cis_connector_role_groupings',
+    'access arguments' => array(array('teacher', 'staff')),
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback for cis_service_connection_ux.
+ */
+function cis_service_connection_ux_form($form, $form_state) {
+  $form = array();
+  $form['site_information'] = array(
+    '#tree' => '0',
+    '#type' => 'fieldset',
+    '#collapsed' => '0',
+    '#collapsible' => '1',
+    '#title' => t('Details'),
+    '#weight' => '0',
+  );
+  $form['site_information']['site_name'] = array(
+    '#description' => t('A short name for the site'),
+    '#default_value' => variable_get('site_name', ''),
+    '#weight' => '0',
+    '#title' => t('Name'),
+    '#type' => 'textfield',
+    '#required' => '1',
+  );
+  $form['site_information']['site_slogan'] = array(
+    '#default_value' => variable_get('site_slogan', ''),
+    '#weight' => '1',
+    '#description' => t('Title of this site'),
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#required' => '1',
+  );
+  $form['site_information']['site_frontpage'] = array(
+    '#default_value' => variable_get('site_frontpage', 'node'),
+    '#weight' => '2',
+    '#description' => t('Home page for this site'),
+    '#type' => 'textfield',
+    '#title' => t('Front page'),
+    '#required' => '1',
+  );
+  $form['site_information']['cis_help_page'] = array(
+    '#default_value' => variable_get('cis_help_page', 'course-help'),
+    '#weight' => '3',
+    '#description' => t('Where the help button points. Leave blank to hide the button'),
+    '#type' => 'textfield',
+    '#title' => t('Help button'),
+  );
+  $form['site_information']['cis_syllabus_page'] = array(
+    '#default_value' => variable_get('cis_syllabus_page', 'syllabus'),
+    '#weight' => '4',
+    '#description' => t('Where the syllabus link points. Leave blank to hide the button'),
+    '#type' => 'textfield',
+    '#title' => t('Syllabus button'),
+  );
+  // load up the system theme admin form to modify it here
+  module_load_include('inc', 'system', 'system.admin');
+  $tmp = drupal_get_form('system_theme_settings', variable_get('theme_default', ''));
+  // see if we have foundation access settings we can dump in here too
+  if (isset($tmp['zurb_foundation']['foundation_access'])) {
+    // format and append the collapse
+    $tmp['zurb_foundation']['foundation_access']['#collapsible'] = TRUE;
+    $form['theme'] = $tmp['zurb_foundation']['foundation_access'];
+    $form['theme']['#title'] = t('Theme / Style settings');
+    $form['theme']['#collapsed'] = '1';
+    // add in the favicon / logo areas
+    $form['theme']['favicon']  = $tmp['zurb_foundation']['general']['favicon'];
+    $form['theme']['favicon']['#weight'] = 11;
+    $form['theme']['logo'] = $tmp['zurb_foundation']['general']['logo'];
+    $form['theme']['logo']['#weight'] = 10;
+    // unset some of the standard theme settings
+    foreach ($form['theme'] as &$value) {
+      if (is_array($value) && isset($value['#value'])) {
+        unset($value['#value']);
+      }
+    }
+    // submit handlers
+    $form['#validate'][] = 'system_theme_settings_validate';
+    $form['#submit'][] = 'cis_service_connection_ux_form_submit';
+  }
+  return system_settings_form($form);
+}
+
+/**
+ * Callback for the settings form.
+ */
+function cis_service_connection_ux_form_submit($form, &$form_state) {
+  module_load_include('inc', 'system', 'system.admin');
+  // load the current variables
+  form_state_values_clean($form_state);
+  // see if we have foundation access settings in here
+  if (isset($form_state['groups']['foundation_access'])) {
+    // load the current settings array we'd get on the theme settings page
+    $vars = variable_get('theme_' . variable_get('theme_default', '') . '_settings', array());
+    foreach ($form_state['values'] as $key => $val) {
+      // if the name of the variable includes FA, overwrite the current one
+      if (strpos($key, 'foundation_access') !== FALSE) {
+        $vars[$key] = $val;
+        // unset so we don't get these stored in the database as stand alones
+        unset($form_state['values'][$key]);
+      }
+    }
+    // If the user uploaded a new logo or favicon, save it to a permanent location
+    // and use it in place of the default theme-provided file.
+    // @todo get logo / favicon working
+    /*
+    if (isset($vars['logo_upload']) && $file = $vars['logo_upload']) {
+      unset($vars['logo_upload']);
+      $filename = file_unmanaged_copy($file->uri);
+      $vars['default_logo'] = 0;
+      $vars['logo_path'] = $filename;
+      $vars['toggle_logo'] = 1;
+    }
+    if (isset($vars['favicon_upload']) && $file = $vars['favicon_upload']) {
+      unset($vars['favicon_upload']);
+      $filename = file_unmanaged_copy($file->uri);
+      $vars['default_favicon'] = 0;
+      $vars['favicon_path'] = $filename;
+      $vars['toggle_favicon'] = 1;
+    }
+
+    // If the user entered a path relative to the system files directory for
+    // a logo or favicon, store a public:// URI so the theme system can handle it.
+    if (!empty($vars['logo_path'])) {
+      $vars['logo_path'] = _system_theme_settings_validate_path($vars['logo_path']);
+    }
+    if (!empty($vars['favicon_path'])) {
+      $vars['favicon_path'] = _system_theme_settings_validate_path($vars['favicon_path']);
+    }
+
+    if (empty($vars['default_favicon']) && !empty($vars['favicon_path'])) {
+      $vars['favicon_mimetype'] = file_get_mimetype($vars['favicon_path']);
+    }*/
+    // set the variables for the theme
+    variable_set('theme_' . variable_get('theme_default', '') . '_settings', $vars);
+  }
+}
+
+/**
+ * Implements hook_profiler_builder_modules_list_alter().
+ */
+function cis_service_connection_ux_profiler_builder_modules_list_alter(&$list) {
+  // don't enable these developer toolsets
+  $disable = array(
+    'devel',
+    'mooc',
+    'cis',
+    'cle',
+  );
+  // loop through and disable projects listed above
+  foreach ($disable as $project) {
+    if (isset($list[$project])) {
+      unset($list[$project]);
+    }
+  }
+}
+/**
+ * Implements hook_profiler_builder_ignore_alter().
+ */
+function cis_service_connection_ux_profiler_builder_ignore_alter(&$ignore_list) {
+  // additional known things to ignore for variables
+  $ignore = array(
+    'color_chamfer_stylesheets',
+    'theme_chamfer_settings',
+    'color_chamfer_logo',
+    'color_chamfer_files',
+    'user_mail_cancel_confirm_body',
+    'user_mail_status_canceled_subject',
+    'user_mail_status_canceled_body',
+    'user_mail_cancel_confirm_body',
+    'user_mail_cancel_confirm_subject',
+    'user_mail_password_reset_body',
+    'user_mail_password_reset_subject',
+    'user_mail_register_admin_created_body',
+    'user_mail_register_admin_created_subject',
+    'user_mail_register_no_approval_required_body',
+    'user_mail_register_no_approval_required_subject',
+    'user_mail_register_pending_approval_body',
+    'user_mail_register_pending_approval_subject',
+    'user_mail_status_blocked_body',
+    'user_mail_status_blocked_subject',
+    'user_mail_status_activated_subject',
+    'user_mail_status_activated_body',
+    'user_mail_status_activated_notify',
+    'site_name',
+    'site_slogan',
+    'site_frontpage',
+    'outline_designer_page_icon',
+    'imce_custom_process',
+    'imce_custom_content',
+    'ckeditor_link_autocomplete_menus',
+    'ckeditor_link_autocomplete_node_types',
+    'ckeditor_link_autocomplete_vocabularies',
+    'ckeditor_link_type_name',
+    'ckeditor_link_type_selected',
+    'imce_profiles',
+    'cis_service_connection_last_sync',
+    'cis_service_instance_uuid',
+  );
+  // merge these items in to have them ignored
+  $ignore_list = array_merge($ignore_list, $ignore);
+}
